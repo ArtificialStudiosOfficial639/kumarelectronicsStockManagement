@@ -1,10 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Kumar Electronics - Invoice System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+
+  <!-- ✅ PDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -51,7 +55,8 @@
   <!-- CONTROLS -->
   <div class="controls">
     <button id="addRowBtn">+ Add Item</button>
-    <button onclick="window.print()">Print / Save</button>
+    <button onclick="window.print()">Print</button>
+    <button onclick="saveAsPDF()">💾 Save as PDF</button>
   </div>
 
   <!-- ITEMS -->
@@ -128,30 +133,34 @@ document.getElementById("addRowBtn").onclick = () => {
 function updateTotal(){
   let rows = document.querySelectorAll("#stockTable tbody tr");
   let subtotal = 0;
+
   rows.forEach(r=>{
-    let q = +r.children[1].children[0].value||0;
-    let r1 = +r.children[2].children[0].value||0;
-    let t = q*r1;
+    let q = +r.children[1].children[0].value || 0;
+    let r1 = +r.children[2].children[0].value || 0;
+    let t = q * r1;
     r.children[3].children[0].value = t.toFixed(2);
     subtotal += t;
   });
+
   subTotal.value = subtotal.toFixed(2);
-  let gst = subtotal*(gstPercent.value||0)/100;
-  cgst.value = (gst/2).toFixed(2);
-  sgst.value = (gst/2).toFixed(2);
-  grandTotal.value = (subtotal+gst).toFixed(2);
+  let gst = subtotal * (gstPercent.value || 0) / 100;
+  cgst.value = (gst / 2).toFixed(2);
+  sgst.value = (gst / 2).toFixed(2);
+  grandTotal.value = (subtotal + gst).toFixed(2);
 }
 
 /* 💾 Save Customer */
 function saveCustomer(){
-  let data = JSON.parse(localStorage.getItem("customers")||"[]");
+  let data = JSON.parse(localStorage.getItem("customers") || "[]");
+
   data.push({
     date: invoiceDate.value,
     name: custName.value,
     mobile: custMobile.value,
     amount: grandTotal.value
   });
-  localStorage.setItem("customers",JSON.stringify(data));
+
+  localStorage.setItem("customers", JSON.stringify(data));
   loadReport();
   alert("Customer saved successfully ✅");
 }
@@ -160,7 +169,8 @@ function saveCustomer(){
 function loadReport(){
   let tbody = document.querySelector("#reportTable tbody");
   tbody.innerHTML = "";
-  let data = JSON.parse(localStorage.getItem("customers")||"[]");
+
+  let data = JSON.parse(localStorage.getItem("customers") || "[]");
   data.forEach(c=>{
     tbody.innerHTML += `
       <tr>
@@ -168,10 +178,28 @@ function loadReport(){
         <td>${c.name}</td>
         <td>${c.mobile}</td>
         <td>₹${c.amount}</td>
-      </tr>`;
+      </tr>
+    `;
   });
 }
 loadReport();
+
+/* 📄 SAVE AS PDF */
+function saveAsPDF(){
+  const { jsPDF } = window.jspdf;
+  let invoice = document.getElementById("app");
+
+  html2canvas(invoice, { scale: 2 }).then(canvas => {
+    let imgData = canvas.toDataURL("image/png");
+    let pdf = new jsPDF("p", "mm", "a4");
+
+    let pdfWidth = 210;
+    let pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("Kumar_Electronics_Invoice_" + invoiceNo.value + ".pdf");
+  });
+}
 </script>
 
 </body>
